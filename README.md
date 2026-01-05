@@ -16,6 +16,9 @@ A simple dependency injection container wrapper based on `uber-go/dig` for manag
 ### [Graceful](graceful/README.md)
 A library for managing application lifecycle, providing graceful shutdown handling with signals and timeouts.
 
+### [Utils](utils/README.md)
+A collection of terminal utilities including JSON diff visualization, table rendering, and interactive text editing.
+
 ## Installation
 
 ```bash
