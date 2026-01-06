@@ -23,7 +23,6 @@ func Init(opts *Options) error {
 
 		if opts.FilePath != "" {
 			opts.Output = OutputFile
-			return
 		}
 
 		// Initialize the atomic level with the configured level
