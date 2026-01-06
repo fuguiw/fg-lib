@@ -21,6 +21,11 @@ func Init(opts *Options) error {
 			opts = DefaultOptions()
 		}
 
+		if opts.FilePath != "" {
+			opts.Output = OutputFile
+			return
+		}
+
 		// Initialize the atomic level with the configured level
 		globalAtomicLevel = zap.NewAtomicLevelAt(toZapLevel(opts.Level))
 
