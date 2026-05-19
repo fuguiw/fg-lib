@@ -70,15 +70,38 @@ func NewZapHandler(opts *Options, level zap.AtomicLevel) *ZapHandler {
 	}
 }
 
-// Handle overrides the underlying handler's Handle method to inject context fields.
+// Handle overrides the underlying handler's Handle method to inject context
+// fields and (optionally) apply Options.ReplaceAttr.
+//
+// zapslog does not expose slog.HandlerOptions.ReplaceAttr to its callers, so
+// we apply the hook here before delegating to the zap backend. When the hook
+// is nil we keep the original fast path (add ctx fields, delegate).
 func (h *ZapHandler) Handle(ctx context.Context, record slog.Record) error {
-	// Extract fields from context and add them to the record
 	fields := contextFields(ctx)
-	if len(fields) > 0 {
-		record.AddAttrs(fields...)
+
+	if h.opts.ReplaceAttr == nil {
+		if len(fields) > 0 {
+			record.AddAttrs(fields...)
+		}
+		return h.Handler.Handle(ctx, record)
 	}
 
-	return h.Handler.Handle(ctx, record)
+	// ReplaceAttr path: rebuild the record so each attr passes through the
+	// hook. An attr returned with an empty Key is dropped (matches slog's
+	// standard ReplaceAttr contract).
+	rebuilt := slog.NewRecord(record.Time, record.Level, record.Message, record.PC)
+	record.Attrs(func(a slog.Attr) bool {
+		if out := h.opts.ReplaceAttr(nil, a); out.Key != "" {
+			rebuilt.AddAttrs(out)
+		}
+		return true
+	})
+	for _, a := range fields {
+		if out := h.opts.ReplaceAttr(nil, a); out.Key != "" {
+			rebuilt.AddAttrs(out)
+		}
+	}
+	return h.Handler.Handle(ctx, rebuilt)
 }
 
 func toZapLevel(l slog.Level) zapcore.Level {

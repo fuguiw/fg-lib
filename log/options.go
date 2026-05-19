@@ -43,6 +43,18 @@ type Options struct {
 
 	// EnableStack enables stack trace recording.
 	EnableStack bool
+
+	// ReplaceAttr, if non-nil, is called on every attribute before the record
+	// reaches the zap backend. Mirrors slog.HandlerOptions.ReplaceAttr but is
+	// implemented inside ZapHandler.Handle because zapslog does not surface
+	// the hook to its callers. Common uses: secret redaction, key rewriting,
+	// dropping verbose fields by returning an empty-keyed slog.Attr{}.
+	//
+	// The groups parameter is the open group stack at the call site. The
+	// current implementation always passes nil for the top-level attrs of a
+	// record (zapslog does not expose group tracking); recursive group-aware
+	// rewrites are the caller's responsibility (see slog.Attr.Value.Group()).
+	ReplaceAttr func(groups []string, a slog.Attr) slog.Attr
 }
 
 func DefaultOptions() *Options {
